@@ -10,7 +10,7 @@ use Pimple\Container;
  */
 class Judopay
 {
-    const SDK_VERSION = '2.2.0';
+    const SDK_VERSION = '2.2.0-YourParkingSpace';
     const API_VERSION = '5.5.0';
     /**
      * Pimple DI container
@@ -37,7 +37,9 @@ class Judopay
                 /** @var Configuration $configuration */
                 $configuration = $c['configuration'];
                 $request = new \Judopay\Request($configuration);
-                $request->setClient(new \Judopay\Client());
+                $request->setClient(new \Judopay\Client([
+                    'verify' => __DIR__.'/../../cert/digicert_sha256_ca.pem',
+                ]));
 
                 return $request;
             }

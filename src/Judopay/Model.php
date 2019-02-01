@@ -108,7 +108,7 @@ class Model
             $this->attributeValues
         );
 
-        return $response->json();
+        return json_decode($response->getBody(), true);
     }
 
     /**

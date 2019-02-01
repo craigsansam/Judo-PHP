@@ -25,12 +25,6 @@ class Request
     public function setClient(Client $client)
     {
         $this->client = $client;
-
-        // Set SSL connection
-        $this->client->setDefaultOption(
-            'verify',
-            __DIR__.'/../../cert/digicert_sha256_ca.pem'
-        );
     }
 
     /**
@@ -64,37 +58,35 @@ class Request
     {
         $endpointUrl = $this->configuration->get('endpointUrl');
 
-        $request = $this->client->createRequest(
+        return $this->send(
             'POST',
-            $endpointUrl.'/'.$resourcePath,
-            [
-                'json' => $data
-            ]
+            "{$endpointUrl}/{$resourcePath}",
+            $data
         );
-
-        return $this->send($request);
     }
 
-    public function setRequestHeaders(GuzzleRequest $request)
+    public function getRequestHeaders()
     {
-        $request->setHeader('api-version', $this->configuration->get('apiVersion'));
-        $request->setHeader('Accept', 'application/json; charset=utf-8');
-        $request->setHeader('Content-Type', 'application/json');
-        $request->setHeader('User-Agent', $this->configuration->get('userAgent'));
+        return [
+            'api-version' => $this->configuration->get('apiVersion'),
+            'Accept' => 'application/json; charset=utf-8',
+            'Content-Type' => 'application/json',
+            'User-Agent' => $this->configuration->get('userAgent'),
+        ];
     }
 
-    public function setRequestAuthentication(GuzzleRequest $request)
+    public function getRequestAuthentication()
     {
         $this->configuration->validate();
         $oauthAccessToken = $this->configuration->get('oauthAccessToken');
 
         // Do we have an oAuth2 access token?
         if (!empty($oauthAccessToken)) {
-            $request->setHeader('Authorization', 'Bearer ' . $oauthAccessToken);
+            return ['Authorization' => 'Bearer ' . $oauthAccessToken];
         } else {
             // Otherwise, use basic authentication
             $basicAuth =  $this->configuration->get('apiToken'). ":" . $this->configuration->get('apiSecret');
-            $request->setHeader('Authorization', 'Basic ' . base64_encode($basicAuth));
+            return ['Authorization' => 'Basic ' . base64_encode($basicAuth)];
         }
     }
 
@@ -108,17 +100,23 @@ class Request
     }
 
     /**
-     * @param GuzzleRequest $guzzleRequest
-     * @throws ApiException
+     * @param $method
+     * @param $uri
+     * @param null $data
      * @return FutureArray|FutureResponse
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    protected function send(GuzzleRequest $guzzleRequest)
+    protected function send($method, $uri, $data = null)
     {
-        $this->setRequestHeaders($guzzleRequest);
-        $this->setRequestAuthentication($guzzleRequest);
+        $request = new \GuzzleHttp\Psr7\Request(
+            $method,
+            $uri,
+            array_merge($this->getRequestHeaders(), $this->getRequestAuthentication()),
+            json_encode($data)
+        );
 
         try {
-            $guzzleResponse = $this->client->send($guzzleRequest);
+            $guzzleResponse = $this->client->send($request);
         } catch (BadResponseException $e) {
             // Guzzle throws an exception when it encounters a 4xx or 5xx error
             // Rethrow the exception so we can raise our custom exception classes
