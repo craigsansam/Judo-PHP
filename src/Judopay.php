@@ -38,7 +38,7 @@ class Judopay
                 $configuration = $c['configuration'];
                 $request = new \Judopay\Request($configuration);
                 $request->setClient(new \Judopay\Client([
-                    'verify' => __DIR__.'/../../cert/digicert_sha256_ca.pem',
+                    'verify' => __DIR__.'/../cert/digicert_sha256_ca.pem',
                 ]));
 
                 return $request;
