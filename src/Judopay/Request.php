@@ -37,15 +37,7 @@ class Request
     {
         $endpointUrl = $this->configuration->get('endpointUrl');
 
-        $request = $this->client->createRequest(
-            'GET',
-            $endpointUrl.'/'.$resourcePath,
-            [
-                'json' => null
-            ]
-        );
-
-        return $this->send($request);
+        return $this->send('GET', "{$endpointUrl}/{$resourcePath}");
     }
 
     /**
